@@ -1,0 +1,116 @@
+services:
+  product_catalog_service:
+    image: product_catalog_serv:latest
+    container_name: product_catalog_service
+    ports:
+      - "3550:3550"
+    
+  currency_service:
+    image: currency_serv:latest
+    container_name: currency_service
+    environment:
+      DISABLE_PROFILER : 1
+      PORT: 7000
+    ports:
+      - "7000:7000"
+    
+  cart_service:
+    image: cart_serv:latest
+    container_name: cart_service
+    ports:
+      - "7070:7070"
+  
+  recomendation_service:
+    image: recomendation-serv:latest
+    container_name: recomendation_service
+    environment:
+      PRODUCT_CATALOG_SERVICE_ADDR: "product_catalog_service:3550"
+    ports:
+      - "8081:8080"
+    depends_on:
+      - product_catalog_service
+  
+  shipping_service:
+    image: shipping_serv:latest
+    container_name: shipping_service
+    ports:
+      - "50051:50051"
+    
+  email_service:
+    image: email_serv:latest
+    container_name: email_service
+    ports:
+      - "8082:8080"
+
+  ad_service:
+    image: ad_serv:latest
+    container_name: ad_service
+    ports:
+      - "9555:9555"
+    
+  payment_service:
+    image: payment_serv:latest
+    container_name: payment_service
+    environment:
+      DISABLE_PROFILER: 1
+      PORT: 50051
+    ports:
+      - "50052:50051"
+  
+  shopping_assistant_service:
+    image: shoppingassistant_serv:latest
+    container_name: shopping_assistant_service
+    environment:
+     LOCAL_DEMO: true
+    ports:
+      - "8083:8080"
+  
+  checkout_service:
+    image: checkout_serv:latest
+    container_name: checkout_service
+    environment:
+      SHIPPING_SERVICE_ADDR: "shipping_service:50051"
+      PRODUCT_CATALOG_SERVICE_ADDR: "product_catalog_service:3550"
+      CART_SERVICE_ADDR: "cart_service:7070"
+      CURRENCY_SERVICE_ADDR: "currency_service:7000"
+      EMAIL_SERVICE_ADDR: "email_service:8080"
+      PAYMENT_SERVICE_ADDR: "payment_service:50051"
+    ports:
+      - "5050:5050"
+    depends_on:
+      - shipping_service
+      - product_catalog_service
+      - cart_service
+      - currency_service
+      - email_service
+      - payment_service
+
+  frontend:
+    image: frontend-serv:latest
+    container_name: frontend_cont
+    environment:
+      PRODUCT_CATALOG_SERVICE_ADDR: "product_catalog_service:3550"
+      CURRENCY_SERVICE_ADDR: "currency_service:7000"
+      CART_SERVICE_ADDR: "cart_service:7070"
+      RECOMMENDATION_SERVICE_ADDR: "recomendation_service:8080"
+      CHECKOUT_SERVICE_ADDR: "checkout_service:5050"
+      SHIPPING_SERVICE_ADDR: "shipping_service:50051"
+      AD_SERVICE_ADDR: "ad_service:9555"
+      SHOPPING_ASSISTANT_SERVICE_ADDR: "shopping_assistant_service:8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - product_catalog_service
+      - currency_service
+      - cart_service
+      - recomendation_service
+      - checkout_service
+      - shipping_service
+      - ad_service
+      - shopping_assistant_service
+    healthcheck:
+      test: ["CMD","curl","-f","http://localhost:8080/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
